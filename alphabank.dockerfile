@@ -1,6 +1,6 @@
 #########################################
 #/Use an official Python runtime as a base image (Python 3.11, slim version for reduced size)
-FROM python:3.11-slim
+FROM python
 
 #Set the working directory inside the container to /alpha_bank
 WORKDIR /alphabank
@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 #Copy the entire project directory (./alpha_bank on the host) to the container's /alpha_bank directory.
 #This includes all the project files such as code and configuration files like config.yaml.
-COPY ./alpha_bank /alphabank
+COPY ./alphabank /alphabank
 
 #Set the PYTHONPATH environment variable to include the /alpha_bank directory.
 #/This allows the Python interpreter to locate your modules and packages.
