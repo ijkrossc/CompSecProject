@@ -5,18 +5,18 @@ import hashlib
 import os
 import random
 
-# Constants
+# Constants for server configuration and data file
 HOST = '127.0.0.1'
 PORT = 6201
 DATA_FILE = 'alpha_bank_data.json'
 
-# Role definitions
+# Role definitions for different user types
 class Role:
     USER = 'USER'
     TELLER = 'TELLER'
     ADMIN = 'ADMIN'
 
-# User class to manage users and roles
+# User class to manage user details and roles
 class User:
     def __init__(self, username, password_hash, role=Role.USER, balance=0):
         self.username = username
@@ -40,7 +40,7 @@ class AlphaBank:
             self.save_data()
 
     def load_data(self):
-        # Load user data from JSON file if exists
+        # Load user data from JSON file if it exists
         if os.path.exists(DATA_FILE):
             with open(DATA_FILE, 'r') as f:
                 data = json.load(f)
@@ -69,9 +69,11 @@ class AlphaBank:
             json.dump(data, f)
 
     def hash_password(self, password):
+        # Hash the password using SHA-256
         return hashlib.sha256(password.encode()).hexdigest()
 
     def login(self, username, password):
+        # Login a user by verifying the password hash
         user = self.users.get(username)
         if user and user.password_hash == self.hash_password(password):
             user.is_logged_in = True
@@ -79,6 +81,7 @@ class AlphaBank:
         return "FAIL: Incorrect username or password"
 
     def create_user(self, username, password, role):
+        # Create a new user with the specified role
         if username in self.users:
             return "FAIL: Username already exists"
         self.users[username] = User(username=username, password_hash=self.hash_password(password), role=role)
@@ -86,6 +89,7 @@ class AlphaBank:
         return f"SUCCESS: {username} created as {role}"
 
     def deposit(self, teller, username, amount):
+        # Deposit money into a user's account (only tellers can do this)
         user = self.users.get(username)
         if teller.role == Role.TELLER and user:
             user.balance += amount
@@ -94,6 +98,7 @@ class AlphaBank:
         return "FAIL: Unauthorized or user not found"
 
     def withdraw(self, teller, username, amount):
+        # Withdraw money from a user's account (only tellers can do this)
         user = self.users.get(username)
         if teller.role == Role.TELLER and user and user.balance >= amount:
             user.balance -= amount
@@ -102,6 +107,7 @@ class AlphaBank:
         return "FAIL: Unauthorized, insufficient funds, or user not found"
 
     def send(self, sender, target_username, amount):
+        # Send money from one user to another
         target = self.users.get(target_username)
         if sender.balance >= amount and target:
             tx_id = str(random.randint(1000, 9999))
@@ -116,6 +122,7 @@ class AlphaBank:
         return "FAIL: Insufficient funds or user not found"
 
     def request(self, requester, target_username, amount):
+        # Request money from another user
         target = self.users.get(target_username)
         if target:
             tx_id = str(random.randint(1000, 9999))
@@ -130,6 +137,7 @@ class AlphaBank:
         return "FAIL: User not found"
 
     def approve(self, user, tx_id):
+        # Approve a pending transaction
         transaction = self.transactions.get(tx_id)
         if transaction and transaction["status"] == "PENDING" and transaction["to"] == user.username:
             sender = self.users[transaction["from"]]
@@ -142,6 +150,7 @@ class AlphaBank:
         return "FAIL: Transaction not found, unauthorized, or insufficient funds"
 
     def promote(self, admin, username):
+        # Promote a user to a higher role (only admins can do this)
         user = self.users.get(username)
         if admin.role == Role.ADMIN and user:
             if user.role == Role.USER:
@@ -153,6 +162,7 @@ class AlphaBank:
         return "FAIL: Unauthorized or user not found"
 
     def demote(self, admin, username):
+        # Demote a user to a lower role (only admins can do this)
         user = self.users.get(username)
         if admin.role == Role.ADMIN and user:
             if user.role == Role.ADMIN:
@@ -163,7 +173,7 @@ class AlphaBank:
             return f"SUCCESS: {username} demoted to {user.role}"
         return "FAIL: Unauthorized or user not found"
 
-# Command handler
+# Command handler to process client commands
 def handle_commands(bank, conn, addr):
     conn.sendall(b"AlphaBank> ")
     logged_in_user = None
@@ -186,7 +196,7 @@ def handle_commands(bank, conn, addr):
         
         conn.sendall(f"{response}\nAlphaBank> ".encode())
 
-# Start the server
+# Start the server to listen for client connections
 def start_server():
     bank = AlphaBank()
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
@@ -199,5 +209,6 @@ def start_server():
             print(f"Connection from {addr}")
             threading.Thread(target=handle_commands, args=(bank, conn, addr)).start()
 
+# Entry point to start the server
 if __name__ == "__main__":
     start_server()
