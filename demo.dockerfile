@@ -16,11 +16,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 #Copy the entire project directory (./alpha_bank on the host) to the container's /alpha_bank directory.
 #This includes all the project files such as code and configuration files like config.yaml.
-COPY ./alpha_bank /alpha_bank
+COPY ./alpha_bank /alphabank
 
 #Set the PYTHONPATH environment variable to include the /alpha_bank directory.
 #/This allows the Python interpreter to locate your modules and packages.
-ENV PYTHONPATH=/alpha_bank
+ENV PYTHONPATH=/alphabank
 
 #Expose port 6201 for communication with the application (e.g., HTTP server or API).
 EXPOSE 6201
