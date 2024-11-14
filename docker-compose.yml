@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  compsecproject:
+    image: compsecproject
+    build:
+      context: .
+      dockerfile: ./Dockerfile
