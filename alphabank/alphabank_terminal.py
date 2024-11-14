@@ -1,3 +1,4 @@
+# Define the User class
 class User:
     def __init__(self, username, password):
         self.username = username
@@ -6,11 +7,13 @@ class User:
         self.role = 'user'
         self.pending_transactions = []
 
+    # Method to login the user
     def login(self, password):
         if self.password == password:
             return "SUCCESS"
         return "FAIL"
 
+    # Method to send money to another user
     def send(self, recipient, amount):
         if self.balance >= amount:
             txid = f"TX{len(self.pending_transactions) + 1}"
@@ -18,11 +21,13 @@ class User:
             return txid
         return "FAIL"
 
+    # Method to request money from another user
     def request(self, sender, amount):
         txid = f"TX{len(self.pending_transactions) + 1}"
         sender.pending_transactions.append({'txid': txid, 'from': sender.username, 'amount': amount, 'type': 'request'})
         return txid
 
+    # Method to approve a pending transaction
     def approve(self, txid):
         for tx in self.pending_transactions:
             if tx['txid'] == txid:
@@ -39,17 +44,19 @@ class User:
                     return "SUCCESS"
         return "FAIL"
 
-
+# Define the Teller class, inheriting from User
 class Teller(User):
     def __init__(self, username, password):
         super().__init__(username, password)
         self.role = 'teller'
 
+    # Method to deposit money into a user's account
     def deposit(self, user, amount):
         txid = f"TX{len(self.pending_transactions) + 1}"
         user.balance += amount
         return txid
 
+    # Method to withdraw money from a user's account
     def withdraw(self, user, amount):
         if user.balance >= amount:
             txid = f"TX{len(self.pending_transactions) + 1}"
@@ -57,15 +64,17 @@ class Teller(User):
             return txid
         return "FAIL"
 
+    # Method to enroll a new user
     def enroll(self, username, password):
         return User(username, password)
 
-
+# Define the Admin class, inheriting from Teller
 class Admin(Teller):
     def __init__(self, username, password):
         super().__init__(username, password)
         self.role = 'admin'
 
+    # Method to promote a user to a higher role
     def promote(self, user):
         if user.role == 'user':
             user.role = 'teller'
@@ -75,6 +84,7 @@ class Admin(Teller):
             return "SUCCESS"
         return "FAIL"
 
+    # Method to demote a user to a lower role
     def demote(self, user):
         if user.role == 'admin':
             user.role = 'teller'
@@ -84,7 +94,7 @@ class Admin(Teller):
             return "SUCCESS"
         return "FAIL"
 
-
+# Main function to handle user commands
 def main():
     users = {}
     current_user = None
@@ -171,6 +181,7 @@ def main():
         else:
             print("Invalid command or insufficient permissions.")
 
+# Initialize the admin user and start the main function
 if __name__ == "__main__":
     admin = Admin("admin", "Spookytus")
     users = {"admin": admin}

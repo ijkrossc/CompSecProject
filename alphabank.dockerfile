@@ -27,5 +27,5 @@ EXPOSE 6201
 
 #The command to run the application when the container starts.
 #In this case, it's running the Python server located at ui/server.py.
-CMD ["python", "server.py"]
+CMD ["python", "alphabank_terminal.py"]
 #########################################
