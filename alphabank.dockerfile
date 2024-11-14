@@ -3,7 +3,7 @@
 FROM python:3.11-slim
 
 #Set the working directory inside the container to /alpha_bank
-WORKDIR /alpha_bank
+WORKDIR /alphabank
 
 #Copy the requirements file to the container. 
 #This is done first to leverage Docker's layer caching. 
