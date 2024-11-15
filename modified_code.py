@@ -201,7 +201,7 @@ def handle_commands(bank, conn, addr):
         elif command[0].lower() == "create_user" and len(command) == 4 and logged_in_user and logged_in_user.role == Role.ADMIN:
             response = bank.create_user(command[1], command[2], command[3])
 
-        elif command[0].lower() == "deposit" and len(command) == 3 and logged_in_user and logged_in_user.role == Role.TELLER or logged_in_user.role == Role.ADMIN:
+        elif command[0].lower() == "deposit" and len(command) == 4 and logged_in_user and logged_in_user.role == Role.TELLER or logged_in_user.role == Role.ADMIN:
             response = bank.deposit(logged_in_user, command[1], int(command[2]))
 
         elif command[0].lower() == "withdraw" and len(command) == 3 and logged_in_user and logged_in_user.role == Role.TELLER:

@@ -81,8 +81,6 @@ class AlphaBank:
             return f"SUCCESS: {username} logged in as {user.role}"
         return "FAIL: Incorrect username or password"
     
-    #def shutdown
-
     def create_user(self, username, password, role):
         # Create a new user with the specified role
         if username in self.users:
