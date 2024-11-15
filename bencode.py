@@ -67,6 +67,7 @@ class AlphaBank:
         }
         with open(DATA_FILE, 'w') as f:
             json.dump(data, f)
+        
 
     def hash_password(self, password):
         # Hash the password using SHA-256
@@ -79,6 +80,8 @@ class AlphaBank:
             user.is_logged_in = True
             return f"SUCCESS: {username} logged in as {user.role}"
         return "FAIL: Incorrect username or password"
+    
+    #def shutdown
 
     def create_user(self, username, password, role):
         # Create a new user with the specified role
