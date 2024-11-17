@@ -10,6 +10,7 @@ The AlphaBank system is a simple banking application that allows users to perfor
 - Send and request money between users
 - Approve pending transactions
 - Promote and demote users (admins only)
+- Check account balance
 
 ## User Roles
 - **USER**: Regular user with basic permissions.
@@ -19,7 +20,6 @@ The AlphaBank system is a simple banking application that allows users to perfor
 ## Commands
 - `login <username> <password>`: Log in as a user.
 - `logout`: Log out the current user.
-- `create_user <username> <password> <role>`: Create a new user with the specified role (admin only).
 - `deposit <username> <amount>`: Deposit money into a user's account (tellers only).
 - `withdraw <username> <amount>`: Withdraw money from a user's account (tellers only).
 - `send <username> <amount>`: Send money to another user.
@@ -27,3 +27,5 @@ The AlphaBank system is a simple banking application that allows users to perfor
 - `approve <transaction_id>`: Approve a pending transaction.
 - `promote <username>`: Promote a user to a higher role (admin only).
 - `demote <username>`: Demote a user to a lower role (admin only).
+- `balance`: Check the balance of the logged-in user.
+- `enroll <username> <password> <role>`: Create a new user with the specified role (admin only).

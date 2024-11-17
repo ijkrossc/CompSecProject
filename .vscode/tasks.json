@@ -19,7 +19,7 @@
 				"docker-build"
 			],
 			"python": {
-				"file": "bencode.py"
+				"file": "alphabank_terminal.py"
 			}
 		}
 	]
