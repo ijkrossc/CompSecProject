@@ -87,7 +87,8 @@ class AlphaBank:
         user = self.users.get(username)
         if user and user.password_hash == self.hash_password(password):
             user.is_logged_in = True
-            return f"SUCCESS: {username} logged in as {user.role}"
+            role_name = ROLE[user.role]
+            return f"SUCCESS: {username} logged in as {role_name}"
         return "FAIL: Incorrect username or password"
     
     def logout(self, username):
@@ -184,7 +185,7 @@ class AlphaBank:
             elif user.role == Role.TELLER:
                 user.role = Role.ADMIN
             self.save_data()
-            return f"SUCCESS: {username} promoted to {user.role}"
+            return f"SUCCESS: {username} promoted to {ROLE[user.role]}"
         return "FAIL: Unauthorized or user not found"
 
     def demote(self, admin, username):
@@ -196,7 +197,7 @@ class AlphaBank:
             elif user.role == Role.TELLER:
                 user.role = Role.USER
             self.save_data()
-            return f"SUCCESS: {username} demoted to {user.role}"
+            return f"SUCCESS: {username} demoted to {ROLE[user.role]}"
         return "FAIL: Unauthorized or user not found"
 
 # Command handler to process client commands
