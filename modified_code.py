@@ -202,7 +202,13 @@ class AlphaBank:
 
 # Command handler to process client commands
 def handle_commands(bank, conn, addr):
-    conn.sendall(b"AlphaBank> ")
+    def get_prompt():
+        if logged_in_user:
+            role_name = ROLE[logged_in_user.role]
+            return f"AlphaBank({logged_in_user.username}:{role_name})> "
+        return "AlphaBank> "
+
+    conn.sendall(get_prompt().encode())
     logged_in_user = None
 
     while True:
@@ -250,7 +256,7 @@ def handle_commands(bank, conn, addr):
         else:
             response = "FAIL: Invalid command or insufficient permissions"
         
-        conn.sendall(f"{response}\nAlphaBank> ".encode())
+        conn.sendall(f"{response}\n{get_prompt()}".encode())
 
 # Start the server to listen for client connections
 def start_server():
