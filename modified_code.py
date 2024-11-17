@@ -101,7 +101,6 @@ class AlphaBank:
         return "FAIL: User not logged in or not found"
     
     def create_user(self, username, password, role):
-        pdb.set_trace()
         # Create a new user with the specified role
         print(f"Attempting to create user: {username}, Role: {role}")
         if username in self.users:
@@ -203,6 +202,8 @@ class AlphaBank:
 
 # Command handler to process client commands
 def handle_commands(bank, conn, addr):
+    logged_in_user = None  # Move this line inside the function
+
     def get_prompt():
         if logged_in_user:
             role_name = ROLE[logged_in_user.role]
@@ -210,7 +211,7 @@ def handle_commands(bank, conn, addr):
         return "AlphaBank> "
 
     conn.sendall(get_prompt().encode())
-    logged_in_user = None
+    # logged_in_user = None  # Remove this line
 
     while True:
         data = conn.recv(1024).decode().strip()
