@@ -11,6 +11,7 @@ HOST = '127.0.0.1'
 PORT = 6201
 DATA_FILE = 'alpha_bank_data.json'
 ROLE = ['null', 'USER', 'TELLER', 'ADMIN']
+logged_in_user = None
 
 # Role definitions for different user types
 #class Role:
