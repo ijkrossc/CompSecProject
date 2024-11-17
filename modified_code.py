@@ -100,20 +100,20 @@ class AlphaBank:
             return f"SUCCESS: {username} logged out"
         return "FAIL: User not logged in or not found"
     
-    def create_user(self, username, password, role):
+    def create_user(self, username, password, role_name):
         # Create a new user with the specified role
-        print(f"Attempting to create user: {username}, Role: {role}")
+        print(f"Attempting to create user: {username}, Role: {role_name}")
         if username in self.users:
             print("Username already exists")
             return "FAIL: Username already exists"
-        #if role not in [Role.USER, Role.TELLER, Role.ADMIN]:
-        if role not in [Role.USER, Role.TELLER, Role.ADMIN]:
+        role = ROLE.index(role_name) if role_name in ROLE else None
+        if role is None:
             print("Invalid role")
             return "FAIL: Invalid role"
         self.users[username] = User(username=username, password_hash=self.hash_password(password), role=role)
         self.save_data()
         print(f"User {username} created successfully")
-        return f"SUCCESS: {username} created as {role}"
+        return f"SUCCESS: {username} created as {role_name}"
 
     def deposit(self, teller, username, amount):
         # Deposit money into a user's account (only tellers can do this)
@@ -142,7 +142,8 @@ class AlphaBank:
                 "from": sender.username,
                 "to": target_username,
                 "amount": amount,
-                "status": "PENDING"
+                "status": "PENDING",
+                "initiator": sender.username
             }
             self.save_data()
             return f"SUCCESS: Created send transaction with TXID {tx_id}"
@@ -157,7 +158,8 @@ class AlphaBank:
                 "from": target_username,
                 "to": requester.username,
                 "amount": amount,
-                "status": "PENDING"
+                "status": "PENDING",
+                "initiator": requester.username
             }
             self.save_data()
             return f"SUCCESS: Created request transaction with TXID {tx_id}"
@@ -166,14 +168,25 @@ class AlphaBank:
     def approve(self, user, tx_id):
         # Approve a pending transaction
         transaction = self.transactions.get(tx_id)
-        if transaction and transaction["status"] == "PENDING" and transaction["to"] == user.username:
-            sender = self.users[transaction["from"]]
-            if sender.balance >= transaction["amount"]:
-                sender.balance -= transaction["amount"]
-                user.balance += transaction["amount"]
-                transaction["status"] = "APPROVED"
-                self.save_data()
-                return f"SUCCESS: Transaction {tx_id} approved"
+        if transaction and transaction["status"] == "PENDING":
+            if transaction["to"] == user.username and transaction["initiator"] != user.username:
+                sender = self.users[transaction["from"]]
+                if sender.balance >= transaction["amount"]:
+                    sender.balance -= transaction["amount"]
+                    user.balance += transaction["amount"]
+                    transaction["status"] = "APPROVED"
+                    self.save_data()
+                    return f"SUCCESS: Transaction {tx_id} approved"
+            elif transaction["from"] == user.username and transaction["initiator"] != user.username:
+                sender = self.users[transaction["from"]]
+                if sender.balance >= transaction["amount"]:
+                    sender.balance -= transaction["amount"]
+                    user.balance += transaction["amount"]
+                    transaction["status"] = "APPROVED"
+                    self.save_data()
+                    return f"SUCCESS: Transaction {tx_id} approved"
+            elif transaction["initiator"] == user.username:
+                return "FAIL: Cannot approve your own request"
         return "FAIL: Transaction not found, unauthorized, or insufficient funds"
 
     def promote(self, admin, username):
@@ -219,7 +232,7 @@ def handle_commands(bank, conn, addr):
             break
         command = data.split()
         response = ""
-        pdb.set_trace()
+        # pdb.set_trace()
         # Handle each command based on logged-in user's role and command input
         if command[0].lower() == "login" and len(command) == 3:
             response = bank.login(command[1], command[2])
@@ -232,7 +245,7 @@ def handle_commands(bank, conn, addr):
                 logged_in_user = None
 
         elif command[0].lower() == "create_user" and len(command) == 4 and logged_in_user:
-            response = bank.create_user(command[1], command[2], int(command[3]))
+            response = bank.create_user(command[1], command[2], command[3].upper())
 
         elif command[0].lower() == "deposit" and len(command) == 3 and logged_in_user:
             response = bank.deposit(logged_in_user, command[1], int(command[2]))
