@@ -27,6 +27,3 @@ The AlphaBank system is a simple banking application that allows users to perfor
 - `approve <transaction_id>`: Approve a pending transaction.
 - `promote <username>`: Promote a user to a higher role (admin only).
 - `demote <username>`: Demote a user to a lower role (admin only).
-
-## Running the Server
-To start the AlphaBank server, run the following command:
