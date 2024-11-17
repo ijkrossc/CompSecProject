@@ -100,7 +100,7 @@ class AlphaBank:
             return f"SUCCESS: {username} logged out"
         return "FAIL: User not logged in or not found"
     
-    def create_user(self, username, password, role_name):
+    def enroll(self, username, password, role_name):
         # Create a new user with the specified role
         print(f"Attempting to create user: {username}, Role: {role_name}")
         if username in self.users:
@@ -213,6 +213,12 @@ class AlphaBank:
             return f"SUCCESS: {username} demoted to {ROLE[user.role]}"
         return "FAIL: Unauthorized or user not found"
 
+    def balance(self, user):
+        # Return the balance of the currently logged-in user
+        if user:
+            return f"SUCCESS: {user.username}'s balance is ${user.balance}"
+        return "FAIL: User not logged in"
+
 # Command handler to process client commands
 def handle_commands(bank, conn, addr):
     logged_in_user = None  # Move this line inside the function
@@ -244,8 +250,8 @@ def handle_commands(bank, conn, addr):
             if "SUCCESS" in response:
                 logged_in_user = None
 
-        elif command[0].lower() == "create_user" and len(command) == 4 and logged_in_user:
-            response = bank.create_user(command[1], command[2], command[3].upper())
+        elif command[0].lower() == "enroll" and len(command) == 4 and logged_in_user:
+            response = bank.enroll(command[1], command[2], command[3].upper())
 
         elif command[0].lower() == "deposit" and len(command) == 3 and logged_in_user:
             response = bank.deposit(logged_in_user, command[1], int(command[2]))
@@ -261,6 +267,9 @@ def handle_commands(bank, conn, addr):
 
         elif command[0].lower() == "approve" and len(command) == 2 and logged_in_user:
             response = bank.approve(logged_in_user, command[1])
+
+        elif command[0].lower() == "balance" and logged_in_user:
+            response = bank.balance(logged_in_user)
 
         elif command[0].lower() == "promote" and len(command) == 2 and logged_in_user:
             response = bank.promote(logged_in_user, command[1])
