@@ -4,11 +4,13 @@ import json
 import hashlib
 import os
 import random
+import pdb
 
 # Constants for server configuration and data file
 HOST = '127.0.0.1'
 PORT = 6201
 DATA_FILE = 'alpha_bank_data.json'
+ROLE = ['null', 'USER', 'TELLER', 'ADMIN']
 
 # Role definitions for different user types
 #class Role:
@@ -88,12 +90,22 @@ class AlphaBank:
             return f"SUCCESS: {username} logged in as {user.role}"
         return "FAIL: Incorrect username or password"
     
+    def logout(self, username):
+        # Logout a user
+        user = self.users.get(username)
+        if user and user.is_logged_in:
+            user.is_logged_in = False
+            return f"SUCCESS: {username} logged out"
+        return "FAIL: User not logged in or not found"
+    
     def create_user(self, username, password, role):
+        pdb.set_trace()
         # Create a new user with the specified role
         print(f"Attempting to create user: {username}, Role: {role}")
         if username in self.users:
             print("Username already exists")
             return "FAIL: Username already exists"
+        #if role not in [Role.USER, Role.TELLER, Role.ADMIN]:
         if role not in [Role.USER, Role.TELLER, Role.ADMIN]:
             print("Invalid role")
             return "FAIL: Invalid role"
@@ -105,7 +117,7 @@ class AlphaBank:
     def deposit(self, teller, username, amount):
         # Deposit money into a user's account (only tellers can do this)
         user = self.users.get(username)
-        if teller.role == Role.TELLER or teller.role == Role.ADMIN and user:
+        if teller.role >= Role.TELLER and user:
             user.balance += amount
             self.save_data()
             return f"SUCCESS: Deposited ${amount} to {username}"
@@ -114,7 +126,7 @@ class AlphaBank:
     def withdraw(self, teller, username, amount):
         # Withdraw money from a user's account (only tellers can do this)
         user = self.users.get(username)
-        if teller.role == Role.TELLER and user and user.balance >= amount:
+        if teller.role >= Role.TELLER and user and user.balance >= amount:
             user.balance -= amount
             self.save_data()
             return f"SUCCESS: Withdrawn ${amount} from {username}"
@@ -198,20 +210,25 @@ def handle_commands(bank, conn, addr):
             break
         command = data.split()
         response = ""
-        import pdb; pdb.set_trace()
+        pdb.set_trace()
         # Handle each command based on logged-in user's role and command input
         if command[0].lower() == "login" and len(command) == 3:
             response = bank.login(command[1], command[2])
             if "SUCCESS" in response:
                 logged_in_user = bank.users[command[1]]
 
-        elif command[0].lower() == "create_user" and len(command) == 4 and logged_in_user and logged_in_user.role == Role.ADMIN:
-            response = bank.create_user(command[1], command[2], command[3])
+        elif command[0].lower() == "logout" and logged_in_user:
+            response = bank.logout(logged_in_user.username)
+            if "SUCCESS" in response:
+                logged_in_user = None
 
-        elif command[0].lower() == "deposit" and len(command) == 3 and logged_in_user and logged_in_user.role == Role.TELLER or logged_in_user.role == Role.ADMIN:
+        elif command[0].lower() == "create_user" and len(command) == 4 and logged_in_user:
+            response = bank.create_user(command[1], command[2], int(command[3]))
+
+        elif command[0].lower() == "deposit" and len(command) == 3 and logged_in_user:
             response = bank.deposit(logged_in_user, command[1], int(command[2]))
 
-        elif command[0].lower() == "withdraw" and len(command) == 3 and logged_in_user and logged_in_user.role == Role.TELLER:
+        elif command[0].lower() == "withdraw" and len(command) == 3 and logged_in_user:
             response = bank.withdraw(logged_in_user, command[1], int(command[2]))
 
         elif command[0].lower() == "send" and len(command) == 3 and logged_in_user:
@@ -223,10 +240,10 @@ def handle_commands(bank, conn, addr):
         elif command[0].lower() == "approve" and len(command) == 2 and logged_in_user:
             response = bank.approve(logged_in_user, command[1])
 
-        elif command[0].lower() == "promote" and len(command) == 2 and logged_in_user and logged_in_user.role == Role.ADMIN:
+        elif command[0].lower() == "promote" and len(command) == 2 and logged_in_user:
             response = bank.promote(logged_in_user, command[1])
 
-        elif command[0].lower() == "demote" and len(command) == 2 and logged_in_user and logged_in_user.role == Role.ADMIN:
+        elif command[0].lower() == "demote" and len(command) == 2 and logged_in_user:
             response = bank.demote(logged_in_user, command[1])
 
         else:
