@@ -177,10 +177,10 @@ class AlphaBank:
                     self.save_data()
                     return f"SUCCESS: Transaction {tx_id} approved"
             elif transaction["from"] == user.username and transaction["initiator"] != user.username:
-                sender = self.users[transaction["from"]]
-                if sender.balance >= transaction["amount"]:
-                    sender.balance -= transaction["amount"]
-                    user.balance += transaction["amount"]
+                receiver = self.users[transaction["to"]]
+                if user.balance >= transaction["amount"]:
+                    user.balance -= transaction["amount"]
+                    receiver.balance += transaction["amount"]
                     transaction["status"] = "APPROVED"
                     self.save_data()
                     return f"SUCCESS: Transaction {tx_id} approved"
@@ -202,6 +202,8 @@ class AlphaBank:
 
     def demote(self, admin, username):
         # Demote a user to a lower role (only admins can do this)
+        if admin.username == username:
+            return "FAIL: Cannot demote yourself"
         user = self.users.get(username)
         if admin.role == Role.ADMIN and user:
             if user.role == Role.ADMIN:
@@ -217,6 +219,19 @@ class AlphaBank:
         if user:
             return f"SUCCESS: {user.username}'s balance is ${user.balance}"
         return "FAIL: User not logged in"
+
+    def show_pending_transactions(self, user):
+        # Show pending transactions for the user
+        pending_transactions = []
+        for tx_id, transaction in self.transactions.items():
+            if transaction["status"] == "PENDING" and (transaction["from"] == user.username or transaction["to"] == user.username):
+                other_user = transaction["to"] if transaction["from"] == user.username else transaction["from"]
+                other_user_role = ROLE[self.users[other_user].role]
+                direction = "To" if transaction["from"] == user.username else "From"
+                pending_transactions.append(f"TXID: {tx_id}, Amount: ${transaction['amount']}, {direction}: {other_user}")
+        if pending_transactions:
+            return "SUCCESS: Pending transactions:\n" + "\n".join(pending_transactions)
+        return "FAIL: No pending transactions found"
 
 # Dictionary to track logged-in users by connection address
 logged_in_users = {}
@@ -280,6 +295,9 @@ def handle_commands(bank, conn, addr):
 
         elif command[0].lower() == "demote" and len(command) == 2 and user:
             response = bank.demote(user, command[1])
+
+        elif command[0].lower() == "pending" and user:
+            response = bank.show_pending_transactions(user)
 
         else:
             response = "FAIL: Invalid command or insufficient permissions"
