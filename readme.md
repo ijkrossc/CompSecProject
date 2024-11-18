@@ -29,3 +29,7 @@ The AlphaBank system is a simple banking application that allows users to perfor
 - `demote <username>`: Demote a user to a lower role (admin only).
 - `balance`: Check the balance of the logged-in user.
 - `enroll <username> <password> <role>`: Create a new user with the specified role (admin only).
+
+## To Log In
+- Execute the following in a Linux terminal: docker run --rm -p 6201:6201 --name alphabank-test compsecproject
+- In a separate terminal, execute the client.py python script. Then login with 'admin' and 'Spookytus' for admin access
