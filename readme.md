@@ -36,4 +36,4 @@ The AlphaBank system is a simple banking application that allows users to perfor
 ## To Log In
 - Build the Dockerfile in the directory
 - Execute the following in a Linux terminal: docker run --rm -p 6201:6201 --name alphabank-test compsecproject
-- In a separate terminal, execute the client.py python script. Then login with 'admin' and 'Spookytus' for admin access
+- In a separate terminal, execute the client.py python script. Then login with 'admin' and 'Spookytus' for admin access, or log in with user credentials created via 'enroll'

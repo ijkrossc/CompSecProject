@@ -177,10 +177,10 @@ class AlphaBank:
                     self.save_data()
                     return f"SUCCESS: Transaction {tx_id} approved"
             elif transaction["from"] == user.username and transaction["initiator"] != user.username:
-                sender = self.users[transaction["from"]]
-                if sender.balance >= transaction["amount"]:
-                    sender.balance -= transaction["amount"]
-                    user.balance += transaction["amount"]
+                receiver = self.users[transaction["to"]]
+                if user.balance >= transaction["amount"]:
+                    user.balance -= transaction["amount"]
+                    receiver.balance += transaction["amount"]
                     transaction["status"] = "APPROVED"
                     self.save_data()
                     return f"SUCCESS: Transaction {tx_id} approved"
@@ -202,6 +202,8 @@ class AlphaBank:
 
     def demote(self, admin, username):
         # Demote a user to a lower role (only admins can do this)
+        if admin.username == username:
+            return "FAIL: Cannot demote yourself"
         user = self.users.get(username)
         if admin.role == Role.ADMIN and user:
             if user.role == Role.ADMIN:
@@ -218,68 +220,97 @@ class AlphaBank:
             return f"SUCCESS: {user.username}'s balance is ${user.balance}"
         return "FAIL: User not logged in"
 
+    def show_pending_transactions(self, user):
+        # Show pending transactions for the user
+        pending_transactions = []
+        for tx_id, transaction in self.transactions.items():
+            if transaction["status"] == "PENDING" and (transaction["from"] == user.username or transaction["to"] == user.username):
+                other_user = transaction["to"] if transaction["from"] == user.username else transaction["from"]
+                other_user_role = ROLE[self.users[other_user].role]
+                direction = "To" if transaction["from"] == user.username else "From"
+                pending_transactions.append(f"TXID: {tx_id}, Amount: ${transaction['amount']}, {direction}: {other_user}")
+        if pending_transactions:
+            return "SUCCESS: Pending transactions:\n" + "\n".join(pending_transactions)
+        return "FAIL: No pending transactions found"
+
+# Dictionary to track logged-in users by connection address
+logged_in_users = {}
+
 # Command handler to process client commands
 def handle_commands(bank, conn, addr):
-    logged_in_user = None  # Move this line inside the function
-
     def get_prompt():
-        if logged_in_user:
-            role_name = ROLE[logged_in_user.role]
-            return f"AlphaBank({logged_in_user.username}:{role_name})> "
+        user = logged_in_users.get(addr)
+        if user:
+            role_name = ROLE[user.role]
+            return f"AlphaBank({user.username}:{role_name})> "
         return "AlphaBank> "
 
     conn.sendall(get_prompt().encode())
-    # logged_in_user = None  # Remove this line
 
-    while True:
-        data = conn.recv(1024).decode().strip()
-        if not data:
-            break
-        command = data.split()
-        response = ""
-        # pdb.set_trace()
-        # Handle each command based on logged-in user's role and command input
-        if command[0].lower() == "login" and len(command) == 3:
-            response = bank.login(command[1], command[2])
-            if "SUCCESS" in response:
-                logged_in_user = bank.users[command[1]]
+    try:
+        while True:
+            data = conn.recv(1024).decode().strip()
+            if not data:
+                conn.sendall(get_prompt().encode())
+                continue  # Ignore blank inputs
+            command = data.split()
+            response = ""
+            user = logged_in_users.get(addr)
 
-        elif command[0].lower() == "logout" and logged_in_user:
-            response = bank.logout(logged_in_user.username)
-            if "SUCCESS" in response:
-                logged_in_user = None
+            # Handle each command based on logged-in user's role and command input
+            if command[0].lower() == "login" and len(command) == 3:
+                if any(u.username == command[1] and u.is_logged_in for u in logged_in_users.values()):
+                    response = "FAIL: User already logged in"
+                else:
+                    response = bank.login(command[1], command[2])
+                    if "SUCCESS" in response:
+                        logged_in_users[addr] = bank.users[command[1]]
 
-        elif command[0].lower() == "enroll" and len(command) == 4 and logged_in_user:
-            response = bank.enroll(command[1], command[2], command[3].upper())
+            elif command[0].lower() == "logout" and user:
+                response = bank.logout(user.username)
+                if "SUCCESS" in response:
+                    del logged_in_users[addr]
 
-        elif command[0].lower() == "deposit" and len(command) == 3 and logged_in_user:
-            response = bank.deposit(logged_in_user, command[1], int(command[2]))
+            elif command[0].lower() == "enroll" and len(command) == 4 and user:
+                response = bank.enroll(command[1], command[2], command[3].upper())
 
-        elif command[0].lower() == "withdraw" and len(command) == 3 and logged_in_user:
-            response = bank.withdraw(logged_in_user, command[1], int(command[2]))
+            elif command[0].lower() == "deposit" and len(command) == 3 and user:
+                response = bank.deposit(user, command[1], int(command[2]))
 
-        elif command[0].lower() == "send" and len(command) == 3 and logged_in_user:
-            response = bank.send(logged_in_user, command[1], int(command[2]))
+            elif command[0].lower() == "withdraw" and len(command) == 3 and user:
+                response = bank.withdraw(user, command[1], int(command[2]))
 
-        elif command[0].lower() == "request" and len(command) == 3 and logged_in_user:
-            response = bank.request(logged_in_user, command[1], int(command[2]))
+            elif command[0].lower() == "send" and len(command) == 3 and user:
+                response = bank.send(user, command[1], int(command[2]))
 
-        elif command[0].lower() == "approve" and len(command) == 2 and logged_in_user:
-            response = bank.approve(logged_in_user, command[1])
+            elif command[0].lower() == "request" and len(command) == 3 and user:
+                response = bank.request(user, command[1], int(command[2]))
 
-        elif command[0].lower() == "balance" and logged_in_user:
-            response = bank.balance(logged_in_user)
+            elif command[0].lower() == "approve" and len(command) == 2 and user:
+                response = bank.approve(user, command[1])
 
-        elif command[0].lower() == "promote" and len(command) == 2 and logged_in_user:
-            response = bank.promote(logged_in_user, command[1])
+            elif command[0].lower() == "balance" and user:
+                response = bank.balance(user)
 
-        elif command[0].lower() == "demote" and len(command) == 2 and logged_in_user:
-            response = bank.demote(logged_in_user, command[1])
+            elif command[0].lower() == "promote" and len(command) == 2 and user:
+                response = bank.promote(user, command[1])
 
-        else:
-            response = "FAIL: Invalid command or insufficient permissions"
-        
-        conn.sendall(f"{response}\n{get_prompt()}".encode())
+            elif command[0].lower() == "demote" and len(command) == 2 and user:
+                response = bank.demote(user, command[1])
+
+            elif command[0].lower() == "pending" and user:
+                response = bank.show_pending_transactions(user)
+
+            else:
+                response = "FAIL: Invalid command or insufficient permissions"
+            
+            conn.sendall(f"{response}\n{get_prompt()}".encode())
+    except ConnectionResetError:
+        print(f"Connection with {addr} was forcibly closed by the remote host.")
+        if addr in logged_in_users:
+            del logged_in_users[addr]
+    finally:
+        conn.close()
 
 # Start the server to listen for client connections
 def start_server():
